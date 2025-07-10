@@ -8,6 +8,7 @@ node_modules
 dist
 build
 upload
+venv
 deploy.log
 config/shopify.yml
 npm-debug.log
