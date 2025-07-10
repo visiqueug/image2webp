@@ -8,12 +8,18 @@ from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QPushButton, QFileDialog, QMessageBox,
     QVBoxLayout, QCheckBox, QHBoxLayout, QTextEdit
 )
-from PyQt6.QtGui import QPixmap, QFont, QIcon
+from PyQt6.QtGui import QPixmap, QFontDatabase, QFont, QIcon
 from PyQt6.QtCore import Qt, pyqtSignal
 import ctypes
 
 BASE_DIR = Path(__file__).resolve().parent
-version = "2025.7.1"
+version = "2025.7.2"
+
+def resource_path(relative_path):
+    """Ressourcen kompatibel für PyInstaller laden"""
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
 
 def resize_image(img, max_size):
     if img.width > max_size or img.height > max_size:
@@ -71,32 +77,65 @@ class ImageConverter(QWidget):
 
     def __init__(self):
         super().__init__()
+
+        # Fonts einbinden
+        font_regular_path = BASE_DIR / "Roboto-Regular.ttf"
+        font_semibold_path = BASE_DIR / "Roboto-SemiBold.ttf"
+
+        font_ids = []
+        for font_path in [font_regular_path, font_semibold_path]:
+            if font_path.exists():
+                font_id = QFontDatabase.addApplicationFont(str(font_path))
+                if font_id != -1:
+                    font_ids.append(font_id)
+                else:
+                    print(f"⚠️ Schrift konnte nicht geladen werden: {font_path.name}")
+            else:
+                print(f"⚠️ Datei nicht gefunden: {font_path.name}")
+
+        # Optionale globale Standardschrift setzen
+        if font_ids:
+            family = QFontDatabase.applicationFontFamilies(font_ids[0])[0]
+            QApplication.instance().setFont(QFont(family, 10))
+
+
         self.setAcceptDrops(True)
-        self.setWindowTitle(f"VISIQUE - Image to WEBP Converter (v{version})")
-        self.setStyleSheet("background-color: black; color: white;")
+        self.setWindowTitle(f"VISIQUE - Image 2 WebP Converter (v{version})")
+        self.setStyleSheet("color: white;")
+
+        # Hintergrundbild als Label
+        background = QLabel(self)
+        background.setPixmap(QPixmap(resource_path("bg.jpg")))
+        background.setScaledContents(True)
+        background.setGeometry(self.rect())  # Nimmt komplette Fenstergröße
+
 
         layout = QVBoxLayout()
 
+        layout.setContentsMargins(100, 20, 100, 25)
+
+        version_label = QLabel(f"Version {version}")
+        version_label.setFont(QFont("Roboto", 10))
+        version_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(version_label)
+
         # Logo
-        logo_path = BASE_DIR / "logo.png"
+        logo_path =  Path(resource_path("logo.png"))
         if logo_path.exists():
             pixmap = QPixmap(str(logo_path)).scaled(250, 63, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-            logo_label = QLabel()
+            
+            logo_label = ClickableLabel("https://www.visique.de")
             logo_label.setPixmap(pixmap)
             logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             logo_label.setCursor(Qt.CursorShape.PointingHandCursor)
-            logo_label.mousePressEvent = lambda event: webbrowser.open("https://www.visique.de")
+            
             layout.addWidget(logo_label)
 
-        title = QLabel("Image to WEBP Converter")
-        title.setFont(QFont("Calibri", 18, QFont.Weight.Bold))
+        title = QLabel("Image 2 WebP Converter")
+        title.setFont(QFont("Roboto", 18, QFont.Weight.Bold))
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title.setStyleSheet("margin-bottom: 10px;")
         layout.addWidget(title)
-
-        version_label = QLabel(f"Version {version}")
-        version_label.setFont(QFont("Calibri", 10))
-        version_label.setAlignment(Qt.AlignmentFlag.AlignRight)
-        layout.addWidget(version_label)
 
         # Checkbox zentriert
         checkbox_layout = QHBoxLayout()
@@ -115,6 +154,7 @@ class ImageConverter(QWidget):
         for btn in (btn_folder, btn_files):
             btn.setStyleSheet("""
                 QPushButton {
+                    margin: 15px 0;
                     background-color: #FDCA40;
                     color: black;
                     font-size: 14px;
@@ -147,13 +187,19 @@ class ImageConverter(QWidget):
         self.toggle_log_btn = QPushButton("Log anzeigen")
         self.toggle_log_btn.setCheckable(True)
         self.toggle_log_btn.setChecked(False)
-        self.toggle_log_btn.setStyleSheet("margin-top: 10px;")
+        self.toggle_log_btn.setStyleSheet("""
+            QPushButton {
+                margin-top: 10px;
+                border: none;
+                background: none;
+            }
+        """)
         self.toggle_log_btn.clicked.connect(self.toggle_log_visibility)
         layout.addWidget(self.toggle_log_btn)
 
         # Log-Bereich (anfangs versteckt)
         log_label = QLabel("Log Output:")
-        log_label.setFont(QFont("Calibri", 12, QFont.Weight.Bold))
+        log_label.setFont(QFont("Roboto", 12, QFont.Weight.Bold))
         log_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.log_label = log_label
         layout.addWidget(log_label)
@@ -166,6 +212,9 @@ class ImageConverter(QWidget):
         self.status_output.setVisible(False)
 
         self.setLayout(layout)
+
+        # Layer: Hintergrund unten, Inhalt oben
+        background.lower()
 
     def toggle_log_visibility(self):
         is_visible = self.toggle_log_btn.isChecked()
@@ -217,6 +266,10 @@ class DropArea(QLabel):
     def __init__(self):
         super().__init__("Dateien hierher ziehen und ablegen")
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.set_default_style()
+        self.setAcceptDrops(True)
+
+    def set_default_style(self):
         self.setStyleSheet("""
             QLabel {
                 border: 2px dashed #FDCA40;
@@ -224,26 +277,58 @@ class DropArea(QLabel):
                 font-size: 14px;
                 padding: 30px;
                 border-radius: 10px;
+                background-color: transparent;
             }
         """)
-        self.setAcceptDrops(True)
+
+    def set_highlight_style(self):
+        self.setStyleSheet("""
+            QLabel {
+                border: 2px dashed #FFFFFF;
+                color: #FFFFFF;
+                font-size: 14px;
+                padding: 30px;
+                border-radius: 10px;
+                background-color: rgba(253, 202, 64, 0.2);
+            }
+        """)
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
             event.acceptProposedAction()
+            self.set_highlight_style()  # Visuellen Effekt aktivieren
+
+    def dragLeaveEvent(self, event):
+        self.set_default_style()  # Effekt zurücksetzen
 
     def dropEvent(self, event):
+        self.set_default_style()  # Effekt zurücksetzen
         paths = [url.toLocalFile() for url in event.mimeData().urls()]
         valid_files = [f for f in paths if f.lower().endswith((
             '.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp', '.gif', '.webp', '.avif'
         ))]
         if valid_files:
             self.files_dropped.emit(valid_files)
+
+class ClickableLabel(QLabel):
+    def __init__(self, url, parent=None):
+        super().__init__(parent)
+        self.url = url
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            webbrowser.open(self.url)
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
-    icon_path = BASE_DIR / "icon.icns"
-    if icon_path.exists() and sys.platform == "darwin":
+    icon_path = None
+    if sys.platform == "darwin":
+        icon_path = Path(resource_path("icon.icns"))
+    elif sys.platform.startswith("win"):
+        icon_path = Path(resource_path("icon.ico"))
+
+    if icon_path and icon_path.exists():
         app.setWindowIcon(QIcon(str(icon_path)))
 
     window = ImageConverter()

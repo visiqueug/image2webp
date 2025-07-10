@@ -6,7 +6,6 @@ Mit optionaler quadratischer Darstellung (2048x2048) für Produktbilder.
 
 Entwickelt mit Python 3.11+ und PyQt6.
 
-
 🔧 FUNKTIONEN
 -------------
 
@@ -20,8 +19,8 @@ Entwickelt mit Python 3.11+ und PyQt6.
 - Unterstützt Transparenz-Konvertierung (RGBA → RGB mit weißem Hintergrund)
 
 Unterstützte Formate:
-- PNG, JPG, JPEG, TIF, TIFF, BMP, GIF, WEBP, AVIF
 
+- PNG, JPG, JPEG, TIF, TIFF, BMP, GIF, WEBP, AVIF
 
 📦 INSTALLATION
 ---------------
@@ -41,6 +40,7 @@ pip install -r requirements.txt
 ```
 
 **requirements.txt**
+
 ```
 PyQt6
 Pillow
@@ -52,9 +52,8 @@ Pillow
 python main.py
 ```
 
-
-🚀 BUILD ALS MAC APP
----------------------
+🚀 BUILD ALS APP
+----------------
 
 Mit PyInstaller lässt sich eine native `.app` für macOS erstellen.
 
@@ -66,11 +65,18 @@ Mit PyInstaller lässt sich eine native `.app` für macOS erstellen.
 pip install pyinstaller
 ```
 
-2. Baue die App:
+2. Baue die Mac App:
 
 ```bash
 pyinstaller --windowed --icon=icon.icns --add-data "logo.png:." main.py
 ```
+
+2. Baue die Windows App:
+
+```bash
+pyinstaller main.py --onefile --windowed --icon=icon.ico --name VQ_Image2WebP --add-data "bg.jpg;." --add-data "logo.png;." --add-data "Roboto-Regular.ttf;." --add-data "Roboto-SemiBold.ttf;." --add-data "icon.ico;."
+```
+
 
 ### Ergebnis:
 
@@ -82,7 +88,6 @@ open dist/main.app
 ```
 
 Hinweis: Achte darauf, dass `logo.png` und `icon.icns` im gleichen Verzeichnis wie `main.py` liegen.
-
 
 📁 DATEISTRUKTUR
 ----------------
@@ -103,7 +108,6 @@ project/
 - Das Tool nutzt `sys._MEIPASS`, um Ressourcen im `.app`-Bundle korrekt zu laden.
 - Die Fenstergröße passt sich dynamisch an, wenn der Log angezeigt/versteckt wird.
 - Die App speichert keine Dateien dauerhaft – es wird nur im gewählten Zielordner exportiert.
-
 
 🛠 TODO / IDEEN
 ---------------
