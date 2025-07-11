@@ -707,10 +707,27 @@ class AltTextDialog(QDialog):
         # Buttons horizontal
         btn_layout = QHBoxLayout()
 
-        # Generieren-Button
-        self.generate_btn = QPushButton("Mit KI generieren")
-        self.generate_btn.clicked.connect(self.generate_alt_text)
-        btn_layout.addWidget(self.generate_btn)
+        # Nur anzeigen, wenn GPT-Token gesetzt ist
+        settings = QSettings("VISIQUE", "WebPConverter")
+        api_key = settings.value("chatgpt_token", "")
+
+        if api_key:
+            self.generate_btn = QPushButton("Mit KI generieren")
+            self.generate_btn.clicked.connect(self.generate_alt_text)
+            self.generate_btn.setStyleSheet("""
+                QPushButton {
+                    margin: 15px 0;
+                    background-color: #FDCA40;
+                    color: black;
+                    font-size: 14px;
+                    padding: 10px 20px;
+                    border-radius: 5px;
+                }
+                QPushButton:hover {
+                    background-color: #e6b800;
+                }
+            """)
+            btn_layout.addWidget(self.generate_btn)
 
         # Hochladen-Button
         btn_upload = QPushButton("Hochladen")
