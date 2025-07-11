@@ -78,37 +78,29 @@ class ImageConverter(QWidget):
     def __init__(self):
         super().__init__()
 
-        # Fonts einbinden
         font_regular_path = BASE_DIR / "Roboto-Regular.ttf"
         font_semibold_path = BASE_DIR / "Roboto-SemiBold.ttf"
-
         font_ids = []
         for font_path in [font_regular_path, font_semibold_path]:
             if font_path.exists():
                 font_id = QFontDatabase.addApplicationFont(str(font_path))
                 if font_id != -1:
                     font_ids.append(font_id)
-                else:
-                    print(f"⚠️ Schrift konnte nicht geladen werden: {font_path.name}")
-            else:
-                print(f"⚠️ Datei nicht gefunden: {font_path.name}")
-
-        # Optionale globale Standardschrift setzen
         if font_ids:
             family = QFontDatabase.applicationFontFamilies(font_ids[0])[0]
             QApplication.instance().setFont(QFont(family, 10))
 
-
         self.setAcceptDrops(True)
         self.setWindowTitle(f"VISIQUE - Image 2 WebP Converter (v{version})")
-        self.setStyleSheet("color: white;")
+        self.setFixedSize(700, 450)
+        self.move(QApplication.primaryScreen().availableGeometry().center() - self.rect().center())
+        self.setStyleSheet("background-color: black; color: white;")
 
-        # Hintergrundbild als Label
-        background = QLabel(self)
-        background.setPixmap(QPixmap(resource_path("bg.jpg")))
-        background.setScaledContents(True)
-        background.setGeometry(self.rect())  # Nimmt komplette Fenstergröße
-
+        self.background = QLabel(self)
+        self.background.setPixmap(QPixmap(resource_path("bg.jpg")))
+        self.background.setScaledContents(True)
+        self.background.setGeometry(self.rect())
+        self.background.lower()
 
         layout = QVBoxLayout()
 
@@ -117,6 +109,7 @@ class ImageConverter(QWidget):
         version_label = QLabel(f"Version {version}")
         version_label.setFont(QFont("Roboto", 10))
         version_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+        version_label.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         layout.addWidget(version_label)
 
         # Logo
@@ -127,6 +120,7 @@ class ImageConverter(QWidget):
             logo_label = ClickableLabel("https://www.visique.de")
             logo_label.setPixmap(pixmap)
             logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            logo_label.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
             logo_label.setCursor(Qt.CursorShape.PointingHandCursor)
             
             layout.addWidget(logo_label)
@@ -134,6 +128,7 @@ class ImageConverter(QWidget):
         title = QLabel("Image 2 WebP Converter")
         title.setFont(QFont("Roboto", 18, QFont.Weight.Bold))
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         title.setStyleSheet("margin-bottom: 10px;")
         layout.addWidget(title)
 
@@ -201,6 +196,7 @@ class ImageConverter(QWidget):
         log_label = QLabel("Log Output:")
         log_label.setFont(QFont("Roboto", 12, QFont.Weight.Bold))
         log_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        log_label.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.log_label = log_label
         layout.addWidget(log_label)
         log_label.setVisible(False)
@@ -213,16 +209,16 @@ class ImageConverter(QWidget):
 
         self.setLayout(layout)
 
-        # Layer: Hintergrund unten, Inhalt oben
-        background.lower()
-
     def toggle_log_visibility(self):
         is_visible = self.toggle_log_btn.isChecked()
         self.status_output.setVisible(is_visible)
         self.log_label.setVisible(is_visible)
         self.toggle_log_btn.setText("Log verbergen" if is_visible else "Log anzeigen")
 
-        self.adjustSize()
+        if self.toggle_log_btn.isChecked():
+            self.setFixedSize(700, 625)
+        else:
+            self.setFixedSize(700, 450)
 
     def log(self, text):
         self.status_output.append(text)
