@@ -256,24 +256,11 @@ class ImageConverter(QWidget):
         api_action = menu.addAction("Verbindungen")
         api_action.triggered.connect(self.open_api_settings)
 
-        # Spacer nach links (optional, wenn das Menü zentriert wirken soll)
-        spacer = QWidget()
-        spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        menubar.setCornerWidget(spacer, Qt.Corner.TopLeftCorner)
-
-        # Versionsanzeige ganz rechts
-        version_label = QLabel(f"v{version}")
-        version_label.setStyleSheet("""
-            QLabel {
-                color: white;
-                font-size: 12px;
-                padding-top: 5px;
-                padding-right: 10px;
-                background: transparent;
-            }
-        """)
-        version_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-        menubar.setCornerWidget(version_label, Qt.Corner.TopRightCorner)
+        # Hilfe-Menü mit Version
+        help_menu = menubar.addMenu("?")
+        help_menu.setStyleSheet("font-weight: bold;")
+        version_action = help_menu.addAction(f"Version: {version}")
+        version_action.setEnabled(False)
 
         layout.setMenuBar(menubar)
 
