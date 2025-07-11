@@ -297,8 +297,8 @@ class ImageConverter(QWidget):
         button_layout = QHBoxLayout()
 
         # Buttons definieren
-        btn_folder = QPushButton("Kompletten Ordner wählen")
-        btn_files = QPushButton("Einzelne Bilder wählen")
+        btn_folder = QPushButton("Ordner wählen")
+        btn_files = QPushButton("Bilder wählen")
         buttons = [btn_folder, btn_files]
 
         # Prüfe, ob FTP-Daten vorhanden sind → optionalen Button anhängen
