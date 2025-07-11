@@ -204,7 +204,7 @@ class ImageConverter(QWidget):
 
         self.setAcceptDrops(True)
         self.setWindowTitle(f"VISIQUE - Image 2 WebP Converter")
-        self.setFixedSize(750, 450)
+        self.setFixedSize(775, 450)
         self.move(QApplication.primaryScreen().availableGeometry().center() - self.rect().center())
         self.setStyleSheet("background-color: black; color: white;")
 
@@ -385,9 +385,9 @@ class ImageConverter(QWidget):
         self.toggle_log_btn.setText("Log verbergen" if is_visible else "Log anzeigen")
 
         if self.toggle_log_btn.isChecked():
-            self.setFixedSize(750, 625)
+            self.setFixedSize(775, 625)
         else:
-            self.setFixedSize(750, 450)
+            self.setFixedSize(775, 450)
 
     def log(self, text):
         self.status_output.append(text)
