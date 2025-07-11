@@ -19,7 +19,7 @@ from PyQt6.QtCore import Qt, pyqtSignal, QSettings
 import ctypes
 
 BASE_DIR = Path(__file__).resolve().parent
-version = "2025.7.3"
+version = "2025.7.4"
 
 def resource_path(relative_path):
     """Ressourcen kompatibel für PyInstaller laden"""
@@ -844,6 +844,12 @@ if __name__ == "__main__":
             font-size: 14px;
             padding: 5px;
             margin: 2px 0;
+        }
+        QListWidget{
+            min-width: 350px;
+            font-size: 14px;
+            padding: 5px;
+            margin: 2px 0;  
         }
     """)
 
