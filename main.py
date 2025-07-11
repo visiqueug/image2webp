@@ -12,7 +12,7 @@ import base64
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QPushButton, QFileDialog, QMessageBox,
     QVBoxLayout, QCheckBox, QHBoxLayout, QTextEdit,
-    QMenuBar, QMenu, QDialog, QFormLayout, QLineEdit, QSizePolicy
+    QMenuBar, QDialog, QFormLayout, QLineEdit, QListWidget, QInputDialog
 )
 from PyQt6.QtGui import QPixmap, QFontDatabase, QFont, QIcon
 from PyQt6.QtCore import Qt, pyqtSignal, QSettings
@@ -86,6 +86,35 @@ class ApiSettingsDialog(QDialog):
 
         settings = QSettings("VISIQUE", "WebPConverter")
 
+        # --- Shopify ---
+        layout.addRow(self.make_section_label("Shopify"))
+
+        self.shop_list = QListWidget()
+        self.shop_list.setFixedHeight(75)
+        layout.addRow("Shops:", self.shop_list)
+
+        self.shop_name = QLineEdit()
+        layout.addRow("Name:", self.shop_name)
+
+        self.shop_domain = QLineEdit()
+        layout.addRow("Domain:", self.shop_domain)
+
+        self.shop_token = QLineEdit()
+        self.shop_token.setEchoMode(QLineEdit.EchoMode.Password)
+        layout.addRow("API Token:", self.shop_token)
+
+        btn_add = QPushButton("Hinzufügen / Aktualisieren")
+        btn_add.clicked.connect(self.on_add_shop)
+        layout.addRow(btn_add)
+
+        btn_remove = QPushButton("Ausgewählten Shop löschen")
+        btn_remove.clicked.connect(self.on_remove_shop)
+        layout.addRow(btn_remove)
+
+        self.accounts = json.loads(settings.value("shopify_accounts", "[]"))
+        self.refresh_shop_list()
+        self.shop_list.currentRowChanged.connect(self.on_shop_selected)
+
         # --- ChatGPT ---
         layout.addRow(self.make_section_label("ChatGPT"))
 
@@ -95,20 +124,6 @@ class ApiSettingsDialog(QDialog):
         if stored_chatgpt:
             self.chatgpt_token.setPlaceholderText("••••••••••••")
         layout.addRow("API Token:", self.chatgpt_token)
-
-        # --- Shopify ---
-        layout.addRow(self.make_section_label("Shopify"))
-
-        self.shopify_domain = QLineEdit()
-        self.shopify_domain.setText(settings.value("shopify_domain", ""))
-        layout.addRow("Domain:", self.shopify_domain)
-
-        self.shopify_token = QLineEdit()
-        self.shopify_token.setEchoMode(QLineEdit.EchoMode.Password)
-        stored_shopify = settings.value("shopify_token", "")
-        if stored_shopify:
-            self.shopify_token.setPlaceholderText("••••••••••••")
-        layout.addRow("API Token:", self.shopify_token)
 
         # --- FTP ---
         layout.addRow(self.make_section_label("FTP"))
@@ -134,23 +149,53 @@ class ApiSettingsDialog(QDialog):
 
         # --- Speichern Button ---
         btn_save = QPushButton("Speichern")
-        btn_save.setStyleSheet("""
-            QPushButton {
-                margin: 15px 0;
-                background-color: #FDCA40;
-                color: black;
-                font-size: 14px;
-                padding: 10px 20px;
-                border-radius: 5px;
-            }
-            QPushButton:hover {
-                background-color: #e6b800;
-            }
-        """)
         btn_save.clicked.connect(self.save_settings)
         layout.addRow(btn_save)
 
         self.setLayout(layout)
+
+    def refresh_shop_list(self):
+        self.shop_list.clear()
+        for acc in self.accounts:
+            self.shop_list.addItem(acc["name"])
+
+    def on_shop_selected(self, index):
+        if index < 0 or index >= len(self.accounts):
+            return
+        acc = self.accounts[index]
+        self.shop_name.setText(acc["name"])
+        self.shop_domain.setText(acc["domain"])
+        self.shop_token.setText(acc["token"])
+
+    def on_add_shop(self):
+        name = self.shop_name.text().strip()
+        domain = self.shop_domain.text().strip()
+        token = self.shop_token.text().strip()
+        if not name or not domain or not token:
+            QMessageBox.warning(self, "Fehler", "Alle Felder müssen ausgefüllt sein.")
+            return
+
+        for acc in self.accounts:
+            if acc["name"] == name:
+                acc["domain"] = domain
+                acc["token"] = token
+                break
+        else:
+            self.accounts.append({"name": name, "domain": domain, "token": token})
+
+        self.refresh_shop_list()
+        self.save_to_settings()
+
+    def on_remove_shop(self):
+        index = self.shop_list.currentRow()
+        if 0 <= index < len(self.accounts):
+            del self.accounts[index]
+            self.refresh_shop_list()
+            self.save_to_settings()
+
+    def save_to_settings(self):
+        settings = QSettings("VISIQUE", "WebPConverter")
+        settings.setValue("shopify_accounts", json.dumps(self.accounts))
 
     def make_section_label(self, text):
         label = QLabel(text)
@@ -206,7 +251,11 @@ class ImageConverter(QWidget):
         self.setWindowTitle(f"VISIQUE - Image 2 WebP Converter")
         self.setFixedSize(775, 450)
         self.move(QApplication.primaryScreen().availableGeometry().center() - self.rect().center())
-        self.setStyleSheet("background-color: black; color: white;")
+
+        palette = self.palette()
+        palette.setColor(self.backgroundRole(), Qt.GlobalColor.black)
+        self.setPalette(palette)
+        self.setAutoFillBackground(True)
 
         self.background = QLabel(self)
         self.background.setPixmap(QPixmap(resource_path("bg.jpg")))
@@ -218,38 +267,6 @@ class ImageConverter(QWidget):
         layout.setContentsMargins(100, 20, 100, 25)
 
         menubar = QMenuBar(self)
-        menubar.setStyleSheet("""
-            QMenuBar {
-                background-color: #A80854;
-                color: white;
-                font-size: 14px;
-            }
-
-            QMenuBar::item {
-                background: transparent;
-                padding: 4px 12px;
-            }
-
-            QMenuBar::item:selected {
-                background-color: #FDCA40;
-                color: black;
-            }
-
-            QMenu {
-                background-color: #1e1e1e;
-                color: white;
-                border: 1px solid #FDCA40;
-            }
-
-            QMenu::item {
-                padding: 6px 20px;
-            }
-
-            QMenu::item:selected {
-                background-color: #FDCA40;
-                color: black;
-            }
-        """)
 
         # Menü "Einstellungen"
         menu = menubar.addMenu("Einstellungen")
@@ -267,14 +284,12 @@ class ImageConverter(QWidget):
         # Logo
         logo_path =  Path(resource_path("logo.png"))
         if logo_path.exists():
-            pixmap = QPixmap(str(logo_path)).scaled(250, 63, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-            
+            pixmap = QPixmap(str(logo_path)).scaled(250, 63, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)            
             logo_label = ClickableLabel("https://www.visique.de")
             logo_label.setPixmap(pixmap)
             logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             logo_label.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-            logo_label.setCursor(Qt.CursorShape.PointingHandCursor)
-            
+            logo_label.setCursor(Qt.CursorShape.PointingHandCursor)           
             layout.addWidget(logo_label)
 
         title = QLabel("Image 2 WebP Converter")
@@ -284,11 +299,10 @@ class ImageConverter(QWidget):
         title.setStyleSheet("margin-bottom: 10px;")
         layout.addWidget(title)
 
-        # Checkbox zentriert
         checkbox_layout = QHBoxLayout()
         checkbox_layout.addStretch()
         self.square_checkbox = QCheckBox("Produktbild (quadratisch, 2048x2048) erstellen")
-        self.square_checkbox.setStyleSheet("color: white; font-size: 14px;")
+        self.square_checkbox.setStyleSheet("color: white; font-size: 14px; margin-bottom: 25px")
         checkbox_layout.addWidget(self.square_checkbox)
         checkbox_layout.addStretch()
         layout.addLayout(checkbox_layout)
@@ -310,19 +324,6 @@ class ImageConverter(QWidget):
 
         # Styling und Verhalten für alle Buttons
         for btn in buttons:
-            btn.setStyleSheet("""
-                QPushButton {
-                    margin: 15px 0;
-                    background-color: #FDCA40;
-                    color: black;
-                    font-size: 14px;
-                    padding: 10px 20px;
-                    border-radius: 5px;
-                }
-                QPushButton:hover {
-                    background-color: #e6b800;
-                }
-            """)
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
             btn.setMinimumHeight(40)
 
@@ -354,6 +355,8 @@ class ImageConverter(QWidget):
                 margin-top: 10px;
                 border: none;
                 background: none;
+                color: #fff;
+                font-size: 12px;
             }
         """)
         self.toggle_log_btn.clicked.connect(self.toggle_log_visibility)
@@ -447,10 +450,8 @@ class ImageConverter(QWidget):
             self.log(f"FTP-Upload fehlgeschlagen: {e}")
             QMessageBox.critical(self, "Fehler", f"Upload fehlgeschlagen:\n{e}")
 
-    def upload_image_to_shopify(self, image_path):
+    def upload_image_to_shopify(self, image_path, domain, token):
         settings = QSettings("VISIQUE", "WebPConverter")
-        domain = settings.value("shopify_domain")
-        token = settings.value("shopify_token")
         graphql_url = f"https://{domain}/admin/api/2025-01/graphql.json"
 
         # Dialog zur Alt-Text-Abfrage
@@ -573,18 +574,25 @@ class ImageConverter(QWidget):
 
         # Prüfen, ob Shopify-Daten vorhanden sind
         settings = QSettings("VISIQUE", "WebPConverter")
-        shopify_domain = settings.value("shopify_domain", "")
-        shopify_token = settings.value("shopify_token", "")
-        upload_to_shopify = False
+        accounts = json.loads(settings.value("shopify_accounts", "[]"))
+        if not accounts:
+            QMessageBox.warning(self, "Kein Shop", "Es ist kein Shopify-Shop konfiguriert.")
+            return
 
-        if shopify_domain and shopify_token:
-            answer = QMessageBox.question(
-                self,
-                "Zu Shopify hochladen?",
-                "Sollen die konvertierten Bilder direkt zu Shopify hochgeladen werden?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-            )
-            upload_to_shopify = (answer == QMessageBox.StandardButton.Yes)
+        answer = QMessageBox.question(
+            self,
+            "Zu Shopify hochladen?",
+            "Sollen die konvertierten Bilder direkt zu Shopify hochgeladen werden?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        upload_to_shopify = (answer == QMessageBox.StandardButton.Yes)
+
+        if upload_to_shopify:
+            names = [a["name"] for a in accounts]
+            selected_name, ok = QInputDialog.getItem(self, "Shop auswählen", "Wähle einen Shopify-Shop:", names, editable=False)
+            if not ok:
+                return
+            selected_shop = next(acc for acc in accounts if acc["name"] == selected_name)
 
         for path in file_paths:
             self.log(f"Verarbeite {os.path.basename(path)} ...")
@@ -593,7 +601,7 @@ class ImageConverter(QWidget):
 
             if upload_to_shopify:
                 try:
-                    self.upload_image_to_shopify(os.path.join(output_folder, os.path.splitext(os.path.basename(path))[0] + ".webp"))
+                    self.upload_image_to_shopify(os.path.join(output_folder, os.path.splitext(os.path.basename(path))[0] + ".webp"), domain=selected_shop["domain"], token=selected_shop["token"])
                 except Exception as e:
                     self.log(f"Fehler beim Shopify-Upload: {e}")
 
@@ -607,9 +615,7 @@ class ImageConverter(QWidget):
 
     def print_connections(self):
         settings = QSettings("VISIQUE", "WebPConverter")
-        shopify_domain = settings.value("shopify_domain", "")
         ftp_server = settings.value("ftp_server", "")
-        self.log(f"Gespeicherte Shopify Domain: {shopify_domain}")
         self.log(f"Gespeicherter FTP Server: {ftp_server}")
 
 class DropArea(QLabel):
@@ -627,6 +633,7 @@ class DropArea(QLabel):
                 border: 2px dashed #FDCA40;
                 color: #FDCA40;
                 font-size: 14px;
+                margin-top: 25px;
                 padding: 30px;
                 border-radius: 10px;
                 background-color: transparent;
@@ -697,19 +704,6 @@ class AltTextDialog(QDialog):
         # Generieren-Button – immer erstellen, aber ggf. ausblenden
         self.generate_btn = QPushButton("Mit KI generieren")
         self.generate_btn.clicked.connect(self.generate_alt_text)
-        self.generate_btn.setStyleSheet("""
-            QPushButton {
-                margin: 15px 0;
-                background-color: #FDCA40;
-                color: black;
-                font-size: 14px;
-                padding: 10px 20px;
-                border-radius: 5px;
-            }
-            QPushButton:hover {
-                background-color: #e6b800;
-            }
-        """)
 
         # GPT-Token prüfen und Button ggf. verstecken
         settings = QSettings("VISIQUE", "WebPConverter")
@@ -723,22 +717,6 @@ class AltTextDialog(QDialog):
         btn_upload = QPushButton("Hochladen")
         btn_upload.clicked.connect(self.accept)
         btn_layout.addWidget(btn_upload)
-
-        # Button-Style
-        for btn in (self.generate_btn, btn_upload):
-            btn.setStyleSheet("""
-                QPushButton {
-                    margin: 15px 0;
-                    background-color: #FDCA40;
-                    color: black;
-                    font-size: 14px;
-                    padding: 10px 20px;
-                    border-radius: 5px;
-                }
-                QPushButton:hover {
-                    background-color: #e6b800;
-                }
-            """)
 
         layout.addLayout(btn_layout)
 
@@ -803,6 +781,71 @@ class AltTextDialog(QDialog):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+
+
+    app.setStyleSheet("""
+        QMenuBar {
+            background-color: #141414;
+            color: white;
+            font-size: 13px;
+        }
+        QMenuBar::item {
+            background: transparent;
+            padding: 4px 12px;
+        }
+        QMenuBar::item:selected {
+            background-color: #FDCA40;
+            color: black;
+        }
+        QMenu {
+            background-color: #1e1e1e;
+            color: white;
+            border: 1px solid #FDCA40;
+        }
+        QMenu::item {
+            padding: 6px 20px;
+        }
+        QMenu::item:selected {
+            background-color: #FDCA40;
+            color: black;
+        }
+        QPushButton {
+            background-color: #FDCA40;
+            color: black;
+            font-size: 14px;
+            padding: 0 20px;
+            border-radius: 5px;
+            height: 40px;
+            min-height: 40px;
+            width: 100%;
+        }
+        QPushButton:hover {
+            background-color: #e6b800;
+        }
+        QCheckBox {            
+            color: white;
+            spacing: 8px;
+        }
+        QCheckBox::indicator {
+            border-radius: 5px;
+            width: 18px;
+            height: 18px;
+        }
+        QCheckBox::indicator:unchecked {
+            border: 2px solid #FDCA40;
+            background-color: transparent;
+        }
+        QCheckBox::indicator:checked {
+            background-color: #FDCA40;
+            border: 2px solid #FDCA40;
+        }
+        QLineEdit {
+            min-width: 350px;
+            font-size: 14px;
+            padding: 5px;
+            margin: 2px 0;
+        }
+    """)
 
     icon_path = None
     if sys.platform == "darwin":
