@@ -121,7 +121,7 @@ jobs:
 
       - name: Zip .app bundle
         run: |
-          zip -r "dist/vq-image2webp-mac.zip" "dist/VQ Image 2 WebP Converter.app"
+          cd dist && zip -r "vq-image2webp-mac.zip" "VQ Image 2 WebP Converter.app"
 
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
