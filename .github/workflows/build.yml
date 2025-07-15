@@ -34,6 +34,39 @@ jobs:
           name: windows-exe
           path: dist/*.exe
 
+      - name: Extract version
+        id: get_version
+        run: |
+          import re
+          version = "0.0.0"
+          with open("main.py", "r") as f:
+              for line in f:
+                  match = re.match(r'version\s*=\s*["\\'](\d+\.\d+\.\d+)["\\']', line)
+                  if match:
+                      version = match.group(1)
+                      break
+          print(f"::set-output name=version::{version}")
+        shell: python
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.get_version.outputs.version }}
+          name: Release v${{ steps.get_version.outputs.version }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.get_version.outputs.version }}
+          files: |
+            dist/*.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   build-macos:
     name: Build macOS App
     runs-on: macos-latest
@@ -61,3 +94,36 @@ jobs:
         with:
           name: macos-app
           path: dist/*.app
+
+      - name: Extract version
+        id: get_version
+        run: |
+          import re
+          version = "0.0.0"
+          with open("main.py", "r") as f:
+              for line in f:
+                  match = re.match(r'version\s*=\s*["\\'](\d+\.\d+\.\d+)["\\']', line)
+                  if match:
+                      version = match.group(1)
+                      break
+          print(f"::set-output name=version::{version}")
+        shell: python
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.get_version.outputs.version }}
+          name: Release v${{ steps.get_version.outputs.version }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.get_version.outputs.version }}
+          files: |
+            dist/*.app
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
