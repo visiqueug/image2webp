@@ -32,7 +32,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-exe
-          path: dist/image2webp.exe
+          path: dist/VQ Image 2 WebP Converter.exe
 
       - name: Extract version
         id: get_version
@@ -51,7 +51,7 @@ jobs:
 
       - name: Zip .exe
         run: |
-          powershell Compress-Archive -Path dist\image2webp.exe -DestinationPath dist\image2webp-windows.zip
+          powershell Compress-Archive -Path "dist\VQ Image 2 WebP Converter.exe" -DestinationPath dist/vq-image2webp-windows.zip
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -68,7 +68,7 @@ jobs:
         with:
           tag_name: v${{ steps.get_version.outputs.version }}
           files: |
-            dist/image2webp-windows.zip
+            dist/vq-image2webp-windows.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -101,7 +101,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macos-app
-          path: dist/*.app
+          path: dist/VQ Image 2 WebP Converter.app
 
       - name: Extract version
         id: get_version
@@ -121,13 +121,13 @@ jobs:
       - name: Zip .app bundle
         run: |
           cd dist
-          zip -r image2webp-macos.zip image2webp.app
+          zip -r vq-image2webp-mac.zip "VQ Image 2 WebP Converter.app"
 
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.get_version.outputs.version }}
           files: |
-            dist/image2webp-macos.zip
+            dist/vq-image2webp-mac.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
