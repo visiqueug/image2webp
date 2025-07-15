@@ -55,6 +55,7 @@ jobs:
           name: Release v${{ steps.get_version.outputs.version }}
           draft: false
           prerelease: false
+          allow_update: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -64,6 +65,7 @@ jobs:
           tag_name: v${{ steps.get_version.outputs.version }}
           files: |
             dist/*.exe
+          allow_update: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -109,21 +111,12 @@ jobs:
           print(f"::set-output name=version::{version}")
         shell: python
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ steps.get_version.outputs.version }}
-          name: Release v${{ steps.get_version.outputs.version }}
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.get_version.outputs.version }}
           files: |
             dist/*.app
+          allow_update: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
