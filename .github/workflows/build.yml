@@ -49,6 +49,10 @@ jobs:
               print(f"version={version}", file=fh)
         shell: python
 
+      - name: Zip .exe
+        run: |
+          powershell Compress-Archive -Path dist\*.exe -DestinationPath dist\image2webp-windows.zip
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -64,7 +68,7 @@ jobs:
         with:
           tag_name: v${{ steps.get_version.outputs.version }}
           files: |
-            dist/*.exe
+            dist/image2webp-windows.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -114,11 +118,16 @@ jobs:
               print(f"version={version}", file=fh)
         shell: python
 
+      - name: Zip .app bundle
+        run: |
+          cd dist
+          zip -r image2webp-macos.zip MyApp.app
+
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.get_version.outputs.version }}
           files: |
-            dist/*.app
+            dist/image2webp-macos.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
