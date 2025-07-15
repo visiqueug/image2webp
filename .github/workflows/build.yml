@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -28,15 +28,11 @@ jobs:
       - name: Build Windows Executable
         run: pyinstaller build_win.spec
 
-      - name: Create ZIP Archive
-        run: |
-          powershell Compress-Archive -Path dist\* -DestinationPath windows_build.zip
-
-      - name: Upload Windows ZIP
+      - name: Upload .exe
         uses: actions/upload-artifact@v4
         with:
-          name: windows-zip
-          path: windows_build.zip
+          name: windows-exe
+          path: dist/*.exe
 
   build-macos:
     name: Build macOS App
@@ -44,7 +40,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -60,14 +56,8 @@ jobs:
       - name: Build macOS App
         run: pyinstaller build_mac.spec
 
-      - name: Create DMG File
-        run: |
-          mkdir -p dmg_root
-          cp -R dist/*.app dmg_root/
-          hdiutil create -volname MyApp -srcfolder dmg_root -ov -format UDZO macos_build.dmg
-
-      - name: Upload macOS DMG
+      - name: Upload .app
         uses: actions/upload-artifact@v4
         with:
-          name: macos-dmg
-          path: macos_build.dmg
+          name: macos-app
+          path: dist/*.app
