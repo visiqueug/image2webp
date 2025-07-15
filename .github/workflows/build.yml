@@ -51,7 +51,8 @@ jobs:
 
       - name: Zip .exe
         run: |
-          powershell Compress-Archive -Path "dist\VQ Image 2 WebP Converter.exe" -DestinationPath dist/vq-image2webp-windows.zip
+          Compress-Archive -Path "dist\\VQ Image 2 WebP Converter.exe" -DestinationPath "dist\\vq-image2webp-windows.zip"
+        shell: pwsh
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -120,8 +121,7 @@ jobs:
 
       - name: Zip .app bundle
         run: |
-          cd dist
-          zip -r vq-image2webp-mac.zip "VQ Image 2 WebP Converter.app"
+          zip -r "dist/vq-image2webp-mac.zip" "dist/VQ Image 2 WebP Converter.app"
 
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
