@@ -37,7 +37,7 @@ jobs:
       - name: Extract version
         id: get_version
         run: |
-          import re
+          import re, os
           version = "0.0.0"
           with open("main.py", "r") as f:
               for line in f:
@@ -45,7 +45,8 @@ jobs:
                   if match:
                       version = match.group(1)
                       break
-          print(f"::set-output name=version::{version}")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
+              print(f"version={version}", file=fh)
         shell: python
 
       - name: Create GitHub Release
@@ -55,7 +56,6 @@ jobs:
           name: Release v${{ steps.get_version.outputs.version }}
           draft: false
           prerelease: false
-          allow_update: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -65,7 +65,6 @@ jobs:
           tag_name: v${{ steps.get_version.outputs.version }}
           files: |
             dist/*.exe
-          allow_update: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -91,6 +90,9 @@ jobs:
       - name: Build macOS App
         run: pyinstaller build_mac.spec
 
+      - name: List output files
+        run: ls -l dist
+
       - name: Upload .app
         uses: actions/upload-artifact@v4
         with:
@@ -100,7 +102,7 @@ jobs:
       - name: Extract version
         id: get_version
         run: |
-          import re
+          import re, os
           version = "0.0.0"
           with open("main.py", "r") as f:
               for line in f:
@@ -108,7 +110,8 @@ jobs:
                   if match:
                       version = match.group(1)
                       break
-          print(f"::set-output name=version::{version}")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
+              print(f"version={version}", file=fh)
         shell: python
 
       - name: Upload to Release
@@ -117,6 +120,5 @@ jobs:
           tag_name: v${{ steps.get_version.outputs.version }}
           files: |
             dist/*.app
-          allow_update: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
