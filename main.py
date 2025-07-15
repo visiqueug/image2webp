@@ -18,8 +18,9 @@ from PyQt6.QtGui import QPixmap, QFontDatabase, QFont, QIcon
 from PyQt6.QtCore import Qt, pyqtSignal, QSettings
 import ctypes
 
+
 BASE_DIR = Path(__file__).resolve().parent
-version = "2025.7.4"
+version = "2025.7.5"
 
 def resource_path(relative_path):
     """Ressourcen kompatibel für PyInstaller laden"""
@@ -73,6 +74,7 @@ def convert_image_to_webp(input_path, output_path, max_size, square):
 class ApiSettingsDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
+        
         self.setWindowTitle("Verbindungen")
         layout = QFormLayout()
 
@@ -276,20 +278,21 @@ class ImageConverter(QWidget):
         # Hilfe-Menü mit Version
         help_menu = menubar.addMenu("?")
         help_menu.setStyleSheet("font-weight: bold;")
+        poweredby = help_menu.addAction("Powered by VISIQUE.de")
+        poweredby.triggered.connect(lambda: webbrowser.open("https://visique.de"))
         version_action = help_menu.addAction(f"Version: {version}")
         version_action.setEnabled(False)
 
         layout.setMenuBar(menubar)
 
         # Logo
-        logo_path =  Path(resource_path("logo.png"))
+        logo_path = Path(resource_path("logo.png"))
         if logo_path.exists():
-            pixmap = QPixmap(str(logo_path)).scaled(250, 63, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)            
-            logo_label = ClickableLabel("https://www.visique.de")
+            pixmap = QPixmap(str(logo_path)).scaled(250, 63, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            logo_label = QLabel()
             logo_label.setPixmap(pixmap)
             logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             logo_label.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-            logo_label.setCursor(Qt.CursorShape.PointingHandCursor)           
             layout.addWidget(logo_label)
 
         title = QLabel("Image 2 WebP Converter")
@@ -575,17 +578,17 @@ class ImageConverter(QWidget):
         # Prüfen, ob Shopify-Daten vorhanden sind
         settings = QSettings("VISIQUE", "WebPConverter")
         accounts = json.loads(settings.value("shopify_accounts", "[]"))
-        if not accounts:
-            QMessageBox.warning(self, "Kein Shop", "Es ist kein Shopify-Shop konfiguriert.")
-            return
 
-        answer = QMessageBox.question(
-            self,
-            "Zu Shopify hochladen?",
-            "Sollen die konvertierten Bilder direkt zu Shopify hochgeladen werden?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
-        upload_to_shopify = (answer == QMessageBox.StandardButton.Yes)
+        upload_to_shopify = False
+
+        if accounts:
+            answer = QMessageBox.question(
+                self,
+                "Zu Shopify hochladen?",
+                "Sollen die konvertierten Bilder direkt zu Shopify hochgeladen werden?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            upload_to_shopify = (answer == QMessageBox.StandardButton.Yes)
 
         if upload_to_shopify:
             names = [a["name"] for a in accounts]
@@ -715,7 +718,7 @@ class AltTextDialog(QDialog):
 
         # Hochladen-Button
         btn_upload = QPushButton("Hochladen")
-        btn_upload.clicked.connect(self.accept)
+        btn_upload.clicked.connect(self.validate_and_accept)
         btn_layout.addWidget(btn_upload)
 
         layout.addLayout(btn_layout)
@@ -724,6 +727,13 @@ class AltTextDialog(QDialog):
 
     def get_alt_text(self):
         return self.text_input.text().strip()
+    
+    def validate_and_accept(self):
+      alt_text = self.text_input.text().strip()
+      if len(alt_text) < 5:
+          QMessageBox.warning(self, "Ungültiger ALT-Text", "Bitte gib einen ALT-Text mit mindestens 5 Zeichen ein.")
+          return
+      self.accept()
 
     def generate_alt_text(self):
         QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
@@ -781,7 +791,6 @@ class AltTextDialog(QDialog):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-
 
     app.setStyleSheet("""
         QMenuBar {
