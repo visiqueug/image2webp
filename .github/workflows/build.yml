@@ -32,7 +32,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-exe
-          path: dist/*.exe
+          path: dist/image2webp.exe
 
       - name: Extract version
         id: get_version
@@ -51,7 +51,7 @@ jobs:
 
       - name: Zip .exe
         run: |
-          powershell Compress-Archive -Path dist\*.exe -DestinationPath dist\image2webp-windows.zip
+          powershell Compress-Archive -Path dist\image2webp.exe -DestinationPath dist\image2webp-windows.zip
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -121,7 +121,7 @@ jobs:
       - name: Zip .app bundle
         run: |
           cd dist
-          zip -r image2webp-macos.zip MyApp.app
+          zip -r image2webp-macos.zip image2webp.app
 
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
