@@ -17,8 +17,8 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QPixmap, QFontDatabase, QFont, QIcon
 from PyQt6.QtCore import Qt, pyqtSignal, QSettings
 
-from updater import check_for_update, download_and_replace, handle_replace_mode
-handle_replace_mode()
+from updater import check_for_update
+import webbrowser
 
 version = "2025.7.7"
 
@@ -796,11 +796,15 @@ if __name__ == "__main__":
 
     asset_url, latest_version = check_for_update(version)
     if asset_url:
-        reply = QMessageBox.question(None, "Update verfügbar",
-                                    f"Version {latest_version} ist verfügbar. Jetzt aktualisieren?",
-                                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-        if reply == QMessageBox.StandardButton.Yes:
-            download_and_replace(asset_url)
+        msg = f"Version {latest_version} ist verfügbar.\n\nDie neuste Version wird im Downloads Verzeichnis gespeichert."
+        reply = QMessageBox.information(
+            None,
+            "Neue Version verfügbar",
+            msg,
+            QMessageBox.StandardButton.Ok
+        )
+        # Optional: Direkt im Browser öffnen
+        webbrowser.open(asset_url)
 
     app.setStyleSheet("""
         QMenuBar {
