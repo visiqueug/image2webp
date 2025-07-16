@@ -20,7 +20,7 @@ import ctypes
 
 
 BASE_DIR = Path(__file__).resolve().parent
-version = "2025.7.5"
+version = "2025.7.6"
 
 def resource_path(relative_path):
     """Ressourcen kompatibel für PyInstaller laden"""
