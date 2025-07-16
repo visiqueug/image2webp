@@ -16,11 +16,13 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtGui import QPixmap, QFontDatabase, QFont, QIcon
 from PyQt6.QtCore import Qt, pyqtSignal, QSettings
-import ctypes
 
+from updater import check_for_update, download_and_replace, handle_replace_mode
+handle_replace_mode()
+
+version = "2025.7.7"
 
 BASE_DIR = Path(__file__).resolve().parent
-version = "2025.7.6"
 
 def resource_path(relative_path):
     """Ressourcen kompatibel für PyInstaller laden"""
@@ -791,6 +793,14 @@ class AltTextDialog(QDialog):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+
+    asset_url, latest_version = check_for_update(version)
+    if asset_url:
+        reply = QMessageBox.question(None, "Update verfügbar",
+                                    f"Version {latest_version} ist verfügbar. Jetzt aktualisieren?",
+                                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        if reply == QMessageBox.StandardButton.Yes:
+            download_and_replace(asset_url)
 
     app.setStyleSheet("""
         QMenuBar {
